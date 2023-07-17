@@ -9,7 +9,7 @@ import difference_previous_detection
 
 # Parameters
 in_folder = r"D:\wsf-sat\methods\detection\gee"
-output_folder = r"D:\wsf-sat\methods\postprocessing\nbr_threshold_gee"
+output_folder = r"D:\wsf-sat\methods\postprocessing\test"
 temp_list = ["0_tree_mask", "1_morphological_operations", "2_raster_to_polygon",
              "3_area_filter", "4_postprocessing_polygon"]
 
@@ -20,9 +20,11 @@ if not os.path.isdir(temp_folder):
 
 [os.mkdir(os.path.join(temp_folder, name)) for name in temp_list if not os.path.isdir(os.path.join(temp_folder, name))]
 
+input_list = [file for file in os.listdir(in_folder) if file.endswith('.tif')]
+print(f'input files: {input_list}')
+
 
 def main(name):
-    print(in_folder)
     # apply forest mask
     forest_mask.apply_forest_mask()
 
