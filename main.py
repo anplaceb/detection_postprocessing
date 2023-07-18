@@ -1,4 +1,4 @@
-'Postprocessing'
+"""Postprocessing"""
 
 import os
 import forest_mask
@@ -47,10 +47,12 @@ def main(name):
         morphological.save(os.path.join(output_folder, temp_folder, temp_list[1], f'{temp_list[1]}_{f}'))
 
         # raster to polygon
-        raster_to_polygon.raster2poly()
+        r2poly = raster_to_polygon.raster2poly(raster=morphological, value_damage=1,
+                                      output=os.path.join(output_folder, temp_folder, temp_list[2],
+                                                          f'raster2poly_{os.path.splitext(f)[0]}.shp'))
 
         # area filter
-        area_filter.fun_area_filter()
+        area_filter.fun_area_filter(polygon=r2poly)
 
         # agri area
         agri_areas.agri_areas()

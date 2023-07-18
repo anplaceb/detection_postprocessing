@@ -1,15 +1,19 @@
+import arcpy
+from arcpy.sa import *
 
-def raster2poly():
+arcpy.CheckOutExtension("spatial")
+
+
+def raster2poly(raster, value_damage, output):
     print('Raster to polygon')
 
     # Extract value 1 (damage)
     print("Extract value 1")
-    extract_damage = ExtractByAttributes(outShrink_op, "Value = {}".format(value_damage))
-    save_function(extract_damage, temp_folder, temp_list[2], temp_list[2] + "_" + f)
 
-    shp_final_path_name = os.path.splitext(raster_final_path_name)[0] + '.shp'
-    out = arcpy.RasterToPolygon_conversion(in_raster=raster_damaged_class,
-                                           out_polygon_features=shp_final_path_name,
+    extract_damage = ExtractByAttributes(raster, f'Value = {value_damage}')
+
+    out = arcpy.RasterToPolygon_conversion(in_raster=extract_damage,
+                                           out_polygon_features=output,
                                            simplify="NO_SIMPLIFY",
                                            raster_field="Value",
                                            create_multipart_features="SINGLE_OUTER_PART",
