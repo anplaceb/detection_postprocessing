@@ -1,6 +1,7 @@
 """Postprocessing"""
 
 import os
+import re
 import forest_mask
 import area_filter
 import morphological_operations
@@ -10,6 +11,7 @@ import local_spatial_overlapping
 import difference_previous_detection
 
 import arcpy
+
 arcpy.env.overwriteOutput = True
 
 # Parameters
@@ -37,6 +39,8 @@ print(f'input files: {input_list}')
 def main(name):
     for f in input_list:
         print(f'Input file is {f}')
+        year = re.findall(r'\d+', f)
+        print(type(*year))
 
         # apply forest mask
         detection_tree_mask = forest_mask.apply_forest_mask(raster=os.path.join(in_folder, f), tree_mask=tree_mask)
@@ -47,12 +51,15 @@ def main(name):
         morphological.save(os.path.join(output_folder, temp_folder, temp_list[1], f'{temp_list[1]}_{f}'))
 
         # raster to polygon
-        r2poly = raster_to_polygon.raster2poly(raster=morphological, value_damage=1,
-                                      output=os.path.join(output_folder, temp_folder, temp_list[2],
-                                                          f'raster2poly_{os.path.splitext(f)[0]}.shp'))
-
+        r2poly = raster_to_polygon.raster2poly(raster=morphological, value_damage=1, year=year,
+                                               output=os.path.join(output_folder, temp_folder, temp_list[2],
+                                                                   f'raster2poly_{os.path.splitext(f)[0]}.shp')
+                                               )
         # area filter
-        area_filter.fun_area_filter(polygon=r2poly)
+        area_filter.fun_area_filter(polygon=os.path.join(output_folder, temp_folder, temp_list[2],
+                                                         f'raster2poly_{os.path.splitext(f)[0]}.dbf'),
+                                    min_area=0.25, output=os.path.join(output_folder, temp_folder, temp_list[3],
+                                                                       f'area_filter_{os.path.splitext(f)[0]}.shp'))
 
         # agri area
         agri_areas.agri_areas()
@@ -62,6 +69,7 @@ def main(name):
 
         # difference previous
         difference_previous_detection.diff_prev_detection()
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
