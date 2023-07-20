@@ -1,7 +1,5 @@
 import arcpy
-from arcpy.sa import *
 
-arcpy.CheckOutExtension("spatial")
 
 
 def fun_area_filter(polygon, min_area, output):
@@ -11,6 +9,7 @@ def fun_area_filter(polygon, min_area, output):
     expression = "!SHAPE.area@hectares!"
     # Execute AddField
 
+    # check if field exists
     arcpy.AddField_management(polygon, "area_ha", "DOUBLE", field_precision=10,
                               field_scale=2)
 
