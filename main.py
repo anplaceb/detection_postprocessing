@@ -9,7 +9,6 @@ import agri_areas
 import area_filter
 import merge_previous_detection
 import difference_previous_detection
-
 import arcpy
 
 arcpy.env.overwriteOutput = True
@@ -19,7 +18,7 @@ in_folder = r"D:\wsf-sat\methods\detection\gee"
 output_folder = r"D:\wsf-sat\methods\postprocessing\test"
 temp_folder = os.path.join(output_folder, "temp")
 temp_list = ["0_tree_mask", "1_morpho_op", "2_raster2poly", "3_agri_erase", "4_area_filter", "5_merge_past",
-             "6_diff_previous", "7_area_filter"]
+             "6_diff_previous"]
 
 tree_mask = r"D:\wsf-sat\data\forestmask\fnews\V5_TCD_2015_Germany_10m_S2Al_32632_Mdlm_TCD50_2bit_FADSL_mmu25_2_0_TCD2018_WM_V5_2_0.tif"
 # downloaded from https://atlas.thuenen.de/layers/fnews_holzbodenmaske_2018_32632:geonode:fnews_holzbodenmaske_2018_32632
@@ -38,17 +37,13 @@ print(f'input files: {input_list}')
 
 # search for first year of detection
 first_year = re.findall(r"(?<!\d)\d{4}(?!\d)", input_list[0])[0]
-# first element of the list is first year, regex to isolate
-print(type(first_year))
-
-
-# first year from file name
+# first element of the list is first year, regex to isolate year from the file name
 
 
 def main(name):
     for f_tif in input_list:
-        print(f'Input file is {f_tif}')
-        year = re.findall(r'\d+', f_tif)
+        print(f'Postprocessing file {f_tif}')
+        year = re.findall(r'\d+', f_tif)[0]  # returns list with 1 element, [0] to unlist
         f_shp = f'{os.path.splitext(f_tif)[0]}.shp'
 
         # apply forest mask
@@ -64,20 +59,25 @@ def main(name):
                                       output=os.path.join(output_folder, temp_folder, temp_list[2],
                                                           f'{temp_list[2]}_{f_shp}'))
 
-        # agri area
+        # remove detection from agriculture areas
         agri_areas.agri_areas(polygon=os.path.join(output_folder, temp_folder, temp_list[2], f'{temp_list[2]}_{f_shp}'),
                               agri=agri,
                               output=os.path.join(output_folder, temp_folder, temp_list[3], f'{temp_list[3]}_{f_shp}'))
 
         # area filter
-        area_filter.fun_area_filter(polygon=os.path.join(output_folder, temp_folder, temp_list[3],
-                                                         f'{temp_list[3]}_{os.path.splitext(f_shp)[0]}.dbf'),
-                                    min_area=0.25, output=os.path.join(output_folder, temp_folder, temp_list[4],
-                                                                       f'{temp_list[4]}_{f_shp}'))
+        # if detection of the first year save to final results because the next steps (removing previous detection)
+        # are not necessary
+        if year is first_year:
+            area_filter.fun_area_filter(polygon=os.path.join(output_folder, temp_folder, temp_list[3],
+                                                             f'{temp_list[3]}_{os.path.splitext(f_shp)[0]}.dbf'),
+                                        min_area=0.25, output=os.path.join(output_folder,
+                                                                           f'detection_{f_shp}_postprocessing'))
 
-        # if first year copy to final results
-
-
+        elif year is not first_year:
+            area_filter.fun_area_filter(polygon=os.path.join(output_folder, temp_folder, temp_list[3],
+                                                             f'{temp_list[3]}_{os.path.splitext(f_shp)[0]}.dbf'),
+                                        min_area=0.25, output=os.path.join(output_folder, temp_folder, temp_list[4],
+                                                                           f'{temp_list[4]}_{f_shp}'))
 
         # merge previous detection
         merge_previous_detection.merge_prev_detection(polygon=os.path.join(output_folder, temp_folder, temp_list[4],
@@ -97,10 +97,10 @@ def main(name):
             area_filter.fun_area_filter(polygon=os.path.join(output_folder, temp_folder, temp_list[6],
                                                              f'{temp_list[6]}_{f_shp}'),
                                         min_area=0.25,
-                                        output=os.path.join(output_folder, temp_folder, temp_list[7],
-                                                            f'{temp_list[7]}_{f_shp}'))
-        # write to final results
+                                        output=os.path.join(output_folder, f'detection_{f_shp}_postprocessing'))
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main('PyCharm')
+

@@ -20,4 +20,4 @@ def raster2poly(raster, value_damage, year, output):
                                      max_vertices_per_feature="")
 
     arcpy.AddField_management(output, "year", "SHORT")
-    arcpy.CalculateField_management(output, "year", *year)
+    arcpy.CalculateField_management(output, "year", year)
