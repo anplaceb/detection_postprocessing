@@ -12,8 +12,8 @@ def fun_area_filter(polygon, min_area, output):
     fields = arcpy.ListFields(polygon)  # returns a list of field objects
     fields = [f.name for f in fields]  # access name attribute
 
+    # if field doesn't exist, create it
     if field_name not in fields:
-        # Execute AddField
         arcpy.AddField_management(polygon, field_name, "DOUBLE", field_precision=10,
                                   field_scale=2)
 
