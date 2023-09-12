@@ -1,4 +1,4 @@
-"""Postprocessing"""
+"""Postprocessing of damage detection with threshlold method."""
 
 import os
 import re
@@ -15,8 +15,8 @@ import arcpy
 arcpy.env.overwriteOutput = True
 
 # Paths input output
-input_folder = r"D:\wsf-sat\methods\threshold_analysis\02_thresholds\m15"
-output_folder = r"D:\wsf-sat\methods\threshold_analysis\03_postprocessing\m15"
+input_folder = r"D:\wsf-sat\methods\detection\gee"
+output_folder = r"D:\wsf-sat\methods\postprocessing\nbr_m23_gee"
 temp_folder = os.path.join(output_folder, "temp")
 temp_list = ["0_tree_mask", "1_morpho_op", "2_raster2poly", "3_agri_erase", "4_area_filter", "5_merge_past",
              "6_diff_previous", "7_dissolve"]
@@ -43,7 +43,7 @@ first_year = re.findall(r"(?<!\d)\d{4}(?!\d)", input_list[0])[0]
 print(f'First year:{first_year}')
 
 
-def main(name):
+def main():
     for f_tif in input_list:
         print(f'Postprocessing file {f_tif}')
         year = re.findall(r'(?<!\d)\d{4}(?!\d)', f_tif)[0]  # returns list with 1 element, [0] to unlist
@@ -115,4 +115,4 @@ def main(name):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    main('PyCharm')
+    main()
