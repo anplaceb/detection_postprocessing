@@ -6,6 +6,6 @@ def fun_poly_dissolve(polygon, output, part="SINGLE_PART"):
                               statistics_fields="year MIN;gridcode MIN",
                               multi_part=part)
 
-    arcpy.AlterField_management(in_table=output[:-4] + ".dbf", field='MIN_year', new_field_name='year')
-    arcpy.AlterField_management(in_table=output[:-4] + ".dbf", field='MIN_gridco', new_field_name='gridcode')
+    arcpy.AlterField_management(in_table=output, field='MIN_year', new_field_name='year')
+    arcpy.AlterField_management(in_table=output, field='MIN_gridcode', new_field_name='gridcode')
 

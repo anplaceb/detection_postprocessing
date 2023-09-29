@@ -41,7 +41,7 @@ min_area = 0.25
 if not os.path.isdir(temp_folder):
     os.mkdir(temp_folder)
 
-[os.mkdir(os.path.join(temp_folder, name)) for name in temp_list if not os.path.isdir(os.path.join(temp_folder, name))]
+#[os.mkdir(os.path.join(temp_folder, name)) for name in temp_list if not os.path.isdir(os.path.join(temp_folder, name))]
 
 # List files
 input_list = [file for file in os.listdir(input_folder) if file.endswith('.tif')]
@@ -54,80 +54,63 @@ print(f'First year:{first_year}')
 
 
 def main():
-    for f_tif in input_list:
-        print(f'Postprocessing file {f_tif}')
-        year = re.findall(r'(?<!\d)\d{4}(?!\d)', f_tif)[0]  # returns list with 1 element, [0] to unlist
+    for f in input_list:
+
+        print(f'Postprocessing file {f}')
+
+        year = re.findall(r'(?<!\d)\d{4}(?!\d)', f)[0]  # returns list with 1 element, [0] to unlist
         print(f'Year: {year}')
-        f_shp = f'{os.path.splitext(f_tif)[0]}.shp'
+        #f_shp = f'{os.path.splitext(f_tif)[0]}.shp'
 
         # apply forest mask
-        detection_tree_mask = forest_mask.apply_forest_mask(raster=os.path.join(input_folder, f_tif),
+        detection_tree_mask = forest_mask.apply_forest_mask(raster=os.path.join(input_folder, f),
                                                             tree_mask=tree_mask)
-        detection_tree_mask.save(os.path.join(output_folder, temp_folder, temp_list[0], f'{temp_list[0]}_{f_tif}'))
+        f = f[:-4]  # remove ending because using gdb
+        detection_tree_mask.save(f'tree_mask_{f}')
 
         # morphological operations
         morphological = morphological_operations.morph_op(raster=detection_tree_mask, number_cells=1, zone_set=[1])
-        morphological.save(os.path.join(output_folder, temp_folder, temp_list[1], f'{temp_list[1]}_{f_tif}'))
+        morphological.save(f'morphological_{f}')
 
         # raster to polygon
-        raster_to_polygon.raster2poly(raster=morphological, value_damage=1, year=year,
-                                      output=os.path.join(output_folder, temp_folder, temp_list[2],
-                                                          f'{temp_list[2]}_{f_shp}'))
+        raster_to_polygon.raster2poly(raster=morphological, value_damage=1, year=year, output=f'raster2poly_{f}')
 
         # remove detection from agriculture areas
-        agri_areas.agri_areas(polygon=os.path.join(output_folder, temp_folder, temp_list[2], f'{temp_list[2]}_{f_shp}'),
+        agri_areas.agri_areas(polygon=f'raster2poly_{f}',
                               agri=agri,
-                              output=os.path.join(output_folder, temp_folder, temp_list[3], f'{temp_list[3]}_{f_shp}'))
+                              output=f'agri_erase_{f}')
 
         # Dissolve polygons and multipart to single part before area filtering
-        dissolve_poly.fun_poly_dissolve(polygon=os.path.join(output_folder, temp_folder, temp_list[3],
-                                                             f'{temp_list[3]}_{f_shp}'),
-                                        output=os.path.join(output_folder, temp_folder, temp_list[4],
-                                                            f'{temp_list[4]}_{f_shp}'))
+        dissolve_poly.fun_poly_dissolve(polygon=f'agri_erase_{f}', output=f'dissolve_{f}')
 
         # area filter now and at the last step to avoid removing correct detections in the next step where previous
         # detected areas are removed from the present year
-        area_filter.fun_area_filter(polygon=os.path.join(output_folder, temp_folder, temp_list[4],
-                                                         f'{temp_list[4]}_{os.path.splitext(f_shp)[0]}.dbf'),
-                                    min_area=min_area, output=os.path.join(output_folder, temp_folder, temp_list[5],
-                                                                           f'{temp_list[5]}_{f_shp}'))
+        area_filter.fun_area_filter(polygon=f'dissolve_{f}', min_area=min_area,
+                                    output=os.path.join(temp_folder, f'area_filter_{f}.shp'))
 
         # if detection of the first year save to final results because the next steps (removing previous detection)
         # are not necessary
         if year == first_year:
             print(f'Year {year} is first year')
-            area_filter.fun_area_filter(polygon=os.path.join(output_folder, temp_folder, temp_list[4],
-                                                             f'{temp_list[4]}_{os.path.splitext(f_shp)[0]}.dbf'),
-                                        min_area=min_area, output=os.path.join(output_folder,
-                                                                               f'detection_{f_shp}_postprocessing'))
+            area_filter.fun_area_filter(polygon=f'dissolve_{f}', min_area=min_area,
+                                        output=os.path.join(output_folder, f'detection_{f}_postprocessing'))
 
         elif year != first_year:
             # merge previous detection
-            merge_previous_detection.merge_prev_detection(polygon=os.path.join(output_folder, temp_folder, temp_list[5],
-                                                                               f'{temp_list[5]}_{f_shp}'),
-                                                          output=os.path.join(output_folder, temp_folder, temp_list[6]))
+            merge_previous_detection.merge_prev_detection(polygon=os.path.join(temp_folder, f'area_filter_{f}.shp'),
+                                                          output=f'merge_past_{f}')
 
             # difference previous
             difference_previous_detection.diff_prev_detection(
-                polygon=os.path.join(output_folder, temp_folder, temp_list[5],
-                                     f'{temp_list[5]}_{f_shp}'),
-                past_files_path=
-                os.path.join(output_folder, temp_folder, temp_list[6]),
-                output=
-                os.path.join(output_folder, temp_folder, temp_list[7],
-                             f'{temp_list[7]}_{f_shp}'))
+                polygon=os.path.join(temp_folder, f'area_filter_{f}.shp'), output=f'diff_previous_{f}')
 
             # Dissolve polygons and multipart to single part before area filtering
-            dissolve_poly.fun_poly_dissolve(polygon=os.path.join(output_folder, temp_folder, temp_list[7],
-                                                                 f'{temp_list[7]}_{f_shp}'),
-                                            output=os.path.join(output_folder, temp_folder, temp_list[8],
-                                                                f'{temp_list[8]}_{f_shp}'))
+            dissolve_poly.fun_poly_dissolve(polygon=f'diff_previous_{f}', output=f'dissolve_{f}')
 
             # for all years but the first, save (first year is saved previously)
-            area_filter.fun_area_filter(polygon=os.path.join(output_folder, temp_folder, temp_list[8],
-                                                             f'{temp_list[8]}_{f_shp}'),
+            area_filter.fun_area_filter(polygon=f'dissolve_{f}',
                                         min_area=min_area,
-                                        output=os.path.join(output_folder, f'detection_{f_shp}_postprocessing'))
+                                        output=os.path.join(output_folder, f'detection_{f}_postprocessing'))
 
 
 # Press the green button in the gutter to run the script.
