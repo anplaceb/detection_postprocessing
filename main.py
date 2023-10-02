@@ -10,6 +10,7 @@ import area_filter
 import merge_previous_detection
 import difference_previous_detection
 import dissolve_poly
+import morphological_vector
 import arcpy
 
 # Paths input output
@@ -98,14 +99,23 @@ def main():
         elif year != first_year:
             # merge previous detection
             merge_previous_detection.merge_prev_detection(polygon=os.path.join(temp_folder, f'area_filter_{f}.shp'),
-                                                          output=f'merge_past_{f}')
+                                                          output=f'past_detection_{year}')
 
             # difference previous
             difference_previous_detection.diff_prev_detection(
-                polygon=os.path.join(temp_folder, f'area_filter_{f}.shp'), output=f'diff_previous_{f}')
+                polygon=os.path.join(temp_folder, f'area_filter_{f}.shp'), erase_poly=f'past_detection_{year}',
+                output=f'diff_previous_{f}')
 
             # Dissolve polygons and multipart to single part before area filtering
             dissolve_poly.fun_poly_dissolve(polygon=f'diff_previous_{f}', output=f'dissolve_{f}')
+
+            # Closing
+            morphological_vector.morpho_vect(polygon=f'dissolve_{f}', buffer_dist="-1 Meters", output=f'closing1_{f}')
+            morphological_vector.morpho_vect(polygon=f'closing1_{f}', buffer_dist="1 Meters", output=f'closing2_{f}')
+
+            # Opening
+            morphological_vector.morpho_vect(polygon=f'closing2_{f}', buffer_dist="1 Meters", output=f'opening1_{f}')
+            morphological_vector.morpho_vect(polygon=f'opening1_{f}', buffer_dist="-1 Meters", output=f'opening2_{f}')
 
             # for all years but the first, save (first year is saved previously)
             area_filter.fun_area_filter(polygon=f'dissolve_{f}',

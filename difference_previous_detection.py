@@ -3,7 +3,7 @@ import re
 import arcpy
 
 
-def diff_prev_detection(polygon, output):
+def diff_prev_detection(polygon, erase_poly, output):
     """Removes the damage detection from previous years.
     """
     print('Remove detection previous years')
@@ -13,7 +13,7 @@ def diff_prev_detection(polygon, output):
 
     print(f'Using past_detection_{year}')
     arcpy.PairwiseErase_analysis(in_features=polygon,
-                                 erase_features=f'past_detection_{year}',
+                                 erase_features=erase_poly,
                                  out_feature_class=output
                                  )
 

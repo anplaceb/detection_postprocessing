@@ -22,7 +22,7 @@ def merge_prev_detection(polygon, output):
         # merge and save past year/s detection
         print(f"Merging {list(map(os.path.basename, past_polygons))}")
         arcpy.Merge_management(inputs=past_polygons,
-                               output=f'past_detection_{year}')
+                               output=output)
     else:
         pass
 
