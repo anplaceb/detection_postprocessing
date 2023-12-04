@@ -1,4 +1,5 @@
-"""Postprocessing of damage detection with threshlold method."""
+"""Postprocessing of damage detection.
+    Input: Raster with class damage (1) and no damage (0 or NA)."""
 
 import os
 import re
@@ -14,8 +15,8 @@ import morphological_vector
 import arcpy
 
 # Paths input output
-input_folder = r"D:\wsf-sat\methods\postprocessing\rf_postprocessing\detection_input_for_postprocessing"
-output_folder = r"D:\wsf-sat\methods\postprocessing\rf_postprocessing\detection_postprocessing_025ha"
+input_folder = r"D:\wsf-sat\methods\postprocessing\nbr_m12_gee\detection_input_for_postprocessing"
+output_folder = r"D:\wsf-sat\methods\postprocessing\nbr_m12_gee\detection_postprocessing_025ha"
 
 if not os.path.isdir(os.path.join(output_folder, "Postprocessing.gdb")):
     arcpy.CreateFileGDB_management(output_folder, "Postprocessing")
@@ -33,7 +34,7 @@ temp_list = ["0_tree_mask", "1_morpho_op", "2_raster2poly", "3_agri_erase", "4_d
 tree_mask = r"D:\wsf-sat\data\forestmask\fnews\V5_TCD_2015_Germany_10m_S2Al_32632_Mdlm_TCD50_2bit_FADSL_mmu25_2_0_TCD2018_WM_V5_2_0.tif"
 # downloaded from https://atlas.thuenen.de/layers/fnews_holzbodenmaske_2018_32632:geonode:fnews_holzbodenmaske_2018_32632
 agri = r"D:\wsf-sat\data\agri_areas\Agrar_NDS_2023.shp"
-# downloaded from https://sla.niedersachsen.de/landentwicklung/LEA/  Agrarfoerderung -> Feldbloecke
+# downloaded from https://sla.niedersachsen.de/landentwicklung/LEA/  Download -> Agrarfoerderung -> Feldbloecke
 
 # Parameter
 min_area = 0.25
@@ -61,7 +62,6 @@ def main():
 
         year = re.findall(r'(?<!\d)\d{4}(?!\d)', f)[0]  # returns list with 1 element, [0] to unlist
         print(f'Year: {year}')
-        #f_shp = f'{os.path.splitext(f_tif)[0]}.shp'
 
         # apply forest mask
         detection_tree_mask = forest_mask.apply_forest_mask(raster=os.path.join(input_folder, f),
