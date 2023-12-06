@@ -5,6 +5,13 @@ arcpy.CheckOutExtension("spatial")
 
 
 def morph_op(raster, number_cells, zone_set):
+    """
+    Perform morphological operations on raster: closing followed by opening
+    :param str raster: The input raster for which the identified zones are to be expanded. It must be of integer type
+    :param int number_cells: The number of cells to expand each specified zone by
+    :param list zone_set: The list of zone values to expand
+    :return: Raster after the morphological operations of closing and opening
+    """
     print('Morphological operations')
 
     # Execute Closing to remove holes

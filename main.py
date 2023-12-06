@@ -1,5 +1,19 @@
-"""Postprocessing of damage detection.
-    Input: Raster with class damage (1) and no damage (0 or NA)."""
+"""
+Postprocessing of damage detection.
+Postprocessing includes clip to tree mask from FNEWS project, morphological operations in raster, vectorize,
+remove detection in agriculture areas, remove detection from previous years, morphological operations in vector and
+filter area.
+Input: Folder with raster(s) with class damage (1) and no damage (0 or NA).
+Output: Polygons with damage detection after postprocessing.
+:param str input_folder: The folder path with the detection raster files with class damage (1) and no damage
+(0 or NA) and with year of detection in the name
+:param str output_folder: The folder path for the resulting damage detection polygons
+:param str tree_mask: The file path to the tree mask (Holzbodenmaske FNEWS)
+https://atlas.thuenen.de/layers/fnews_holzbodenmaske_2018_32632:geonode:fnews_holzbodenmaske_2018_32632
+:param agri_areas_poly: The file path to the "Agrarfoerderung" areas, downloaded from
+https://sla.niedersachsen.de/landentwicklung/LEA/  Download -> Agrarfoerderung -> Feldbloecke
+:param int min_area: The minimal area of the damage polygons in ha, used to filter.
+"""
 
 import os
 import re
@@ -11,12 +25,19 @@ import area_filter
 import merge_previous_detection
 import difference_previous_detection
 import dissolve_poly
-import morphological_vector
+import buffer
 import arcpy
 
 # Paths input output
-input_folder = r"D:\wsf-sat\methods\postprocessing\nbr_m12_gee\detection_input_for_postprocessing"
-output_folder = r"D:\wsf-sat\methods\postprocessing\nbr_m12_gee\detection_postprocessing_025ha"
+input_folder = r"D:\wsf-sat\test\input"
+output_folder = r"D:\wsf-sat\test\output"
+
+# Tree mask and agriculture areas
+tree_mask = r"P:\WSF-SAT\Permanent\Daten\Postprocessing_Skript\Holzbodenmaske_FNEWS.tif"
+agri_areas_poly = r"P:\WSF-SAT\Permanent\Daten\Postprocessing_Skript\Agrar_NDS_2023.shp"
+
+# Parameter
+min_area = 0.25
 
 if not os.path.isdir(os.path.join(output_folder, "Postprocessing.gdb")):
     arcpy.CreateFileGDB_management(output_folder, "Postprocessing")
@@ -30,20 +51,9 @@ temp_list = ["0_tree_mask", "1_morpho_op", "2_raster2poly", "3_agri_erase", "4_d
              "6_merge_past",
              "7_diff_previous", "8_dissolve"]
 
-# Tree mask and agriculture areas
-tree_mask = r"D:\wsf-sat\data\forestmask\fnews\V5_TCD_2015_Germany_10m_S2Al_32632_Mdlm_TCD50_2bit_FADSL_mmu25_2_0_TCD2018_WM_V5_2_0.tif"
-# downloaded from https://atlas.thuenen.de/layers/fnews_holzbodenmaske_2018_32632:geonode:fnews_holzbodenmaske_2018_32632
-agri = r"D:\wsf-sat\data\agri_areas\Agrar_NDS_2023.shp"
-# downloaded from https://sla.niedersachsen.de/landentwicklung/LEA/  Download -> Agrarfoerderung -> Feldbloecke
-
-# Parameter
-min_area = 0.25
-
 # Create temp folder and sub-folders inside
 if not os.path.isdir(temp_folder):
     os.mkdir(temp_folder)
-
-#[os.mkdir(os.path.join(temp_folder, name)) for name in temp_list if not os.path.isdir(os.path.join(temp_folder, name))]
 
 # List files
 input_list = [file for file in os.listdir(input_folder) if file.endswith('.tif')]
@@ -78,7 +88,7 @@ def main():
 
         # remove detection from agriculture areas
         agri_areas.agri_areas(polygon=f'raster2poly_{f}',
-                              agri=agri,
+                              agri=agri_areas_poly,
                               output=f'agri_erase_{f}')
 
         # Dissolve polygons and multipart to single part before area filtering
@@ -110,12 +120,12 @@ def main():
             dissolve_poly.fun_poly_dissolve(polygon=f'diff_previous_{f}', output=f'dissolve_{f}')
 
             # Closing
-            morphological_vector.morpho_vect(polygon=f'dissolve_{f}', buffer_dist="-1 Meters", output=f'closing1_{f}')
-            morphological_vector.morpho_vect(polygon=f'closing1_{f}', buffer_dist="1 Meters", output=f'closing2_{f}')
+            buffer.buffer_vect(polygon=f'dissolve_{f}', buffer_dist="-1 Meters", output=f'closing1_{f}')
+            buffer.buffer_vect(polygon=f'closing1_{f}', buffer_dist="1 Meters", output=f'closing2_{f}')
 
             # Opening
-            morphological_vector.morpho_vect(polygon=f'closing2_{f}', buffer_dist="1 Meters", output=f'opening1_{f}')
-            morphological_vector.morpho_vect(polygon=f'opening1_{f}', buffer_dist="-1 Meters", output=f'opening2_{f}')
+            buffer.buffer_vect(polygon=f'closing2_{f}', buffer_dist="1 Meters", output=f'opening1_{f}')
+            buffer.buffer_vect(polygon=f'opening1_{f}', buffer_dist="-1 Meters", output=f'opening2_{f}')
 
             # for all years but the first, save (first year is saved previously)
             area_filter.fun_area_filter(polygon=f'dissolve_{f}',

@@ -4,8 +4,14 @@ import arcpy
 
 
 def merge_prev_detection(polygon, output):
-    print('Merge previous detection')
-    print(f'Polygon:{polygon}')
+    """
+    Merge the detection previous to the current detection year. It searches in the folder where the input file is for
+    files from previous years, and it merges them
+    :param str polygon: The input detection shapefile from the current year
+    :param str output: The output feature class is the merged detection from the years previous to the input
+    :return: No return, the output file is saved in the database
+    """
+    print(f'Merge previous detection for polygon: {polygon}')
 
     # List all files in the folder of polygon
     folder_files = os.path.split(polygon)[0]  # folder containing polygons all years
@@ -15,8 +21,6 @@ def merge_prev_detection(polygon, output):
     past_polygons = list_files[0:list_files.index(polygon)]  # the list is in temporal order
     print(f'past polygons of file {os.path.basename(polygon)}: '
           f'{list(map(os.path.basename, past_polygons))}')
-
-    year = re.findall(r"(?<!\d)\d{4}(?!\d)", polygon)[0]  # search for current year for later saving names
 
     if past_polygons:
         # merge and save past year/s detection

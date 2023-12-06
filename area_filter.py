@@ -2,6 +2,13 @@ import arcpy
 
 
 def fun_area_filter(polygon, min_area, output):
+    """
+    Filter polygons which area is under a certain value. If not area field attribute found, one is created
+    :param str polygon: The input feature class with the polygons to filter
+    :param float min_area: Minimal area for the detection polygons in ha
+    :param str output: The output file path with the polygons over or equal to the minimal area value
+    :return: No return, the output file is saved in the output folder
+    """
     print("Area filter")
 
     # Set local variables
