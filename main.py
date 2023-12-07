@@ -1,7 +1,7 @@
 """
 Postprocessing of damage detection.
 Postprocessing includes clip to tree mask from FNEWS project, morphological operations in raster, vectorize,
-remove detection in agriculture areas, remove detection from previous years, morphological operations in vector and
+remove detection in agriculture areas, remove detection from previous years, simplify polygons and
 filter area.
 Input: Folder with raster(s) with class damage (1) and no damage (0 or NA).
 Output: Polygons with damage detection after postprocessing.
