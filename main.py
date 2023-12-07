@@ -1,8 +1,7 @@
 """
 Postprocessing of damage detection.
 Postprocessing includes clip to tree mask from FNEWS project, morphological operations in raster, vectorize,
-remove detection in agriculture areas, remove detection from previous years, simplify polygons and
-filter area.
+remove detection in agriculture areas, remove detection from previous years, and filter area.
 Input: Folder with raster(s) with class damage (1) and no damage (0 or NA).
 Output: Polygons with damage detection after postprocessing.
 :param str input_folder: The folder path with the detection raster files with class damage (1) and no damage
@@ -25,7 +24,6 @@ import area_filter
 import merge_previous_detection
 import difference_previous_detection
 import dissolve_poly
-import buffer
 import arcpy
 
 # Paths input output
@@ -118,14 +116,6 @@ def main():
 
             # Dissolve polygons and multipart to single part before area filtering
             dissolve_poly.fun_poly_dissolve(polygon=f'diff_previous_{f}', output=f'dissolve_{f}')
-
-            # Closing
-            buffer.buffer_vect(polygon=f'dissolve_{f}', buffer_dist="-1 Meters", output=f'closing1_{f}')
-            buffer.buffer_vect(polygon=f'closing1_{f}', buffer_dist="1 Meters", output=f'closing2_{f}')
-
-            # Opening
-            buffer.buffer_vect(polygon=f'closing2_{f}', buffer_dist="1 Meters", output=f'opening1_{f}')
-            buffer.buffer_vect(polygon=f'opening1_{f}', buffer_dist="-1 Meters", output=f'opening2_{f}')
 
             # for all years but the first, save (first year is saved previously)
             area_filter.fun_area_filter(polygon=f'dissolve_{f}',
